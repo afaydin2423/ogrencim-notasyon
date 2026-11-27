@@ -71,6 +71,7 @@ button{line-height:1.3}button:focus-visible,input:focus-visible,select:focus-vis
 #studentSendNotice p { margin:0 0 14px; font-weight:700; font-size:1.15rem; overflow-wrap:anywhere; }
 #studentSendNotice button { min-height:44px; }
 </style><style id="student-header-compact">
+body > .final-head :is(h1,.head-sub,.head-quote){color:#fff}
 body > .final-head{min-height:62px;padding:5px 12px;gap:9px}
 body > .final-head .queen-logo{width:64px;height:52px}
 body > .final-head .head-rule{height:44px}
@@ -249,6 +250,18 @@ function clearReportContent() {
 reportViewer.addEventListener('close', () => {
   if (!reportViewer.open) clearReportContent();
 });
+const turkiyeTarihBicimi = new Intl.DateTimeFormat('tr-TR', {
+  timeZone: 'Europe/Istanbul', dateStyle: 'short', timeStyle: 'short'
+});
+function notasyonTurkiyeSaati(value) {
+  if (!value) return '';
+  const timestamp = String(value).trim();
+  const normalized = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(timestamp)
+    ? timestamp.replace(' ', 'T') + 'Z'
+    : timestamp;
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? '' : turkiyeTarihBicimi.format(date);
+}
 function openReport(key, label, content) {
   clearReportContent();
   el('reportViewerTitle').textContent = label;
@@ -352,7 +365,7 @@ async function loadGameHistory(append = false) {
       const title = document.createElement('strong');
       const color = game.color === 'White' ? 'Beyaz' : game.color === 'Black' ? 'Siyah' : '';
       title.textContent = [game.tournament || 'Oyun', game.round && game.round !== '?' ? 'Tur ' + game.round : '',
-        color, window.notasyonTurkiyeSaati(game.created_at)].filter(Boolean).join(' · ');
+        color, notasyonTurkiyeSaati(game.created_at)].filter(Boolean).join(' · ');
       const actions = document.createElement('div');
       actions.className = 'report-links';
       const button = document.createElement('button');
@@ -471,7 +484,7 @@ async function loadLocalReports() {
     for (const report of reportData.reports) {
       const group = document.createElement('details');
       const title = document.createElement('summary');
-      const sentAt = window.notasyonTurkiyeSaati(report.sent_at);
+      const sentAt = notasyonTurkiyeSaati(report.sent_at);
       title.textContent = 'Oyun ' + report.game_id + (sentAt ? ' · ' + sentAt : '');
       group.append(title);
       const links = document.createElement('div');
@@ -494,7 +507,7 @@ async function loadLocalReports() {
     if (noticeId === noticeRevision) showNoticeCount(noticeData.notifications);
     for (const notice of noticeData.notifications) {
       const line = document.createElement('p');
-      const createdAt = window.notasyonTurkiyeSaati(notice.created_at);
+      const createdAt = notasyonTurkiyeSaati(notice.created_at);
       line.textContent = notice.message + (createdAt ? ' · ' + createdAt : '') + (notice.is_read ? ' (Okundu)' : ' ');
       if (!notice.is_read) {
         const button = document.createElement('button');
